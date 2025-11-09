@@ -4,14 +4,15 @@ import dayjs from "dayjs";
 
 const prisma = new PrismaClient();
 
-
-export function withCors(response: NextResponse) {
+// ✅ Internal CORS function, not exported
+function applyCors(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return response;
 }
-// ✅ Handle CORS preflight requests
+
+// Handle CORS preflight requests
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -23,7 +24,7 @@ export async function OPTIONS() {
   });
 }
 
-
+// GET /api/cash-outflow
 export async function GET() {
   try {
     // Fetch all invoices with their total + issueDate
@@ -51,11 +52,10 @@ export async function GET() {
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    return withCors(NextResponse.json(chartData));
+    return applyCors(NextResponse.json(chartData));
 
   } catch (error) {
     console.error(error);
-    return withCors(NextResponse.json({ error: "Failed to fetch ..." }, { status: 500 }));
-
+    return applyCors(NextResponse.json({ error: "Failed to fetch ..." }, { status: 500 }));
   }
 }

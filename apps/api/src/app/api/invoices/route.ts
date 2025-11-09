@@ -3,8 +3,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
-export function withCors(response: NextResponse) {
+// ✅ Internal CORS function (do not export)
+function applyCors(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -36,23 +36,19 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return new NextResponse(JSON.stringify(invoices), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*", // 👈 allows frontend access
-      },
-    });
+    return applyCors(
+      new NextResponse(JSON.stringify(invoices), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
   } catch (error) {
     console.error(error);
-    return new NextResponse(
-      JSON.stringify({ error: "Failed to fetch invoices" }),
-      {
+    return applyCors(
+      new NextResponse(JSON.stringify({ error: "Failed to fetch invoices" }), {
         status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
+        headers: { "Content-Type": "application/json" },
+      })
     );
   }
 }

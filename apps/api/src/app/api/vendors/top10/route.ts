@@ -3,13 +3,14 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
-export function withCors(response: NextResponse) {
+// ✅ Internal CORS helper
+function applyCors(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return response;
 }
+
 // ✅ Handle CORS preflight requests
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -22,20 +23,22 @@ export async function OPTIONS() {
   });
 }
 
-
-// GET /api/vendors/top10
+// ✅ GET /api/vendors/top10
 export async function GET() {
   try {
+    // Aggregate invoice totals by vendorId
     const data = await prisma.invoice.groupBy({
       by: ["vendorId"],
       _sum: { total: true },
     });
 
+    // Fetch vendor details
     const vendors = await prisma.vendor.findMany({
       where: { id: { in: data.map(d => d.vendorId).filter(Boolean) } },
       select: { id: true, name: true },
     });
 
+    // Combine totals with vendor names and get top 10
     const result = data
       .map(d => ({
         vendor: vendors.find(v => v.id === d.vendorId)?.name || "Unknown Vendor",
@@ -44,11 +47,11 @@ export async function GET() {
       .sort((a, b) => b.totalSpend - a.totalSpend)
       .slice(0, 10);
 
-    return withCors(NextResponse.json(result));
-
+    return applyCors(NextResponse.json(result));
   } catch (error) {
     console.error(error);
-    return withCors(NextResponse.json({ error: "Failed to fetch ..." }, { status: 500 }));
-
+    return applyCors(
+      NextResponse.json({ error: "Failed to fetch top vendors" }, { status: 500 })
+    );
   }
 }

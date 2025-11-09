@@ -3,13 +3,14 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
-export function withCors(response: NextResponse) {
+// ✅ Internal CORS helper
+function applyCors(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return response;
 }
+
 // ✅ Handle CORS preflight requests
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -22,7 +23,7 @@ export async function OPTIONS() {
   });
 }
 
-
+// ✅ GET /api/stats
 export async function GET() {
   try {
     const [invoiceCount, totalSpend, documentCount, avgInvoiceValue] = await Promise.all([
@@ -39,11 +40,11 @@ export async function GET() {
       avgInvoiceValue: Number(avgInvoiceValue._avg.total || 0),
     };
 
-    return withCors(NextResponse.json(stats));
-
+    return applyCors(NextResponse.json(stats));
   } catch (error) {
     console.error(error);
-    return withCors(NextResponse.json({ error: "Failed to fetch ..." }, { status: 500 }));
-
+    return applyCors(
+      NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 })
+    );
   }
 }
