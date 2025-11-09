@@ -19,6 +19,8 @@
     "axios": "^1.13.2",
     "recharts": "^3.3.0",
     "shadcn-ui": "^0.9.5",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0"
   }
 }
