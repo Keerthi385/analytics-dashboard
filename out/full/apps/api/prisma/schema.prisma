@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vendor {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  taxId     String?  @unique
+  address   String?
+  invoices  Invoice[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  address   String?
+  invoices  Invoice[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Invoice {
+  id             String    @id @default(uuid())
+  sourceId       String?   @unique // original _id from your JSON
+  invoiceNumber  String?   @db.VarChar(100)  // extracted invoiceId.value
+  vendorId       String?
+  customerId     String?
+  issueDate      DateTime?
+  dueDate        DateTime?
+  currency       String    @db.VarChar(10)    @default("EUR")
+  subTotal       Decimal   @db.Decimal(18,2)  @default("0.00")
+  taxTotal       Decimal   @db.Decimal(18,2)  @default("0.00")
+  total          Decimal   @db.Decimal(18,2)  @default("0.00")
+  status         String    @db.VarChar(50)
+  isValidatedByHuman Boolean @default(false)
+  processedAt    DateTime?
+  metadata       Json?
+  extractedData  Json?
+  validatedData  Json?
+  analyticsId    String?   @db.VarChar(100)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  vendor         Vendor?   @relation(fields: [vendorId], references: [id])
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  lineItems      LineItem[]
+  payments       Payment[]
+  documents      Document[]
+}
+
+model LineItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  description String?
+  quantity    Decimal  @db.Decimal(18,4) @default("1")
+  unitPrice   Decimal  @db.Decimal(18,4) @default("0")
+  totalPrice  Decimal  @db.Decimal(18,4) @default("0")
+  createdAt   DateTime @default(now())
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  invoiceId  String
+  amount     Decimal  @db.Decimal(18,2) @default("0")
+  currency   String   @db.VarChar(10) @default("EUR")
+  method     String?  @db.VarChar(100)
+  reference  String?  @db.VarChar(200)
+  paidAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+model Document {
+  id             String   @id @default(uuid())
+  sourceId       String?  // original _id
+  fileName       String
+  filePath       String
+  fileSize       BigInt?
+  fileType       String?
+  status         String?
+  organizationId String?
+  departmentId   String?
+  uploadedById   String?
+  createdAt      DateTime
+  updatedAt      DateTime
+  metadata       Json?
+
+  invoice        Invoice? @relation(fields: [invoiceId], references: [id])
+  invoiceId      String?
+}
