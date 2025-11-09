@@ -1,0 +1,11 @@
+node_modules/
+.next/
+dist/
+build/
+.env
+.env.local
+__pycache__/
+*.pyc
+apps/api/.env
+apps/vanna-ai/.env
+apps/.env
